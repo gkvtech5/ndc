@@ -1,0 +1,65 @@
+
+Xtables-addons
+	A set of additional extensions for the xtables packet filter (iptables) that is present in the linux kernel.
+
+	Setps:
+		1. Install xtables
+		2. GeoIP Database
+		3. Convert ----> iptables understands(format, location)
+
+	Objective :
+		is to block packet traffic coming from perticular GeoLocation using GeoIP Database.
+
+
+sudo apt-get install xz-utils gcc libc6-dev pkg-config make automake iptables-dev linux-headers-4.19.0-5-amd64 libtext-csv-xs-perl libnet-cidr-lite-perl unzip wget
+mkdir -p /temp
+cd /temp
+wget -q http://192.168.74.3/sw/security_tools/iptables/xtables/xtables-addons-3.2.tar.xz
+tar -xvf xtables-addons-3.2.tar.xz
+cd xtables-addons-3.2
+./configure
+make
+make install
+cd /
+ls -l /usr/local/libexec/xtables-addons/
+mkdir xtables
+cd xtables/
+sudo nano /usr/local/libexec/xtables-addons/xt_geoip_dl
+
+cat /usr/local/libexec/xtables-addons/xt_geoip_dl
+#---------Start of File------
+#!/bin/sh
+
+rm -rf GeoLite2-Country-CSV_*
+
+wget -q http://192.168.74.3/sw/security_tools/geoip/GeoLite2-Country-CSV_20191112.zip
+unzip -q GeoLite2-Country-CSV_20191112.zip
+
+rm -f GeoLite2-Country-CSV_20191112.zip
+
+#--------End of File-------
+
+## Executing the file 	
+/usr/local/libexec/xtables-addons/xt_geoip_dl
+
+cd GeoLite2-Country-CSV_20191112/
+
+mkdir /usr/share/xt_geoip
+
+sudo /usr/local/libexec/xtables-addons/xt_geoip_build -D /usr/share/xt_geoip
+
+ls /usr/share/xt_geoip/
+
+iptables -m state -h		## Error Occurs
+
+sudo depmod -a				## Rebuilding dependencies
+
+sudo iptables -m geoip -h	## Help will be shown
+
+sudo iptables -A INPUT -m geoip --src-cc CN -j LOG --log-level debug --log-prefix "|with love from china|"
+
+links http://Youku.com
+
+### again check log message
+
+cat /var/log/debug

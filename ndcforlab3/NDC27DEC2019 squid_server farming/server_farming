@@ -1,0 +1,39 @@
+Server farming/ Load Balancing using squid (Reverse proxy)
+
+_____________________________________________________________
+Requirements: 3machines
+M1:	squid
+M2: apache2
+M3:	apache2
+
+Objective is to ip forward on another machine. which will work on round-robin algorithm.
+_____________________________________________________________
+
+
+M1:
+
+apt-get install squid
+
+nano /etc/squid/squid.conf
+------------------------------------------------------------
+acl shuhari_users dstdomain 192.168.157.185
+
+http_access allow shuhari_users
+
+visible_hostname 192.168.157.185
+
+http_port 80 bhost 
+
+cache_peer 192.168.157.186 parent 80 0 no-query originserver round-robin weight=2 name=one
+cache_peer 192.168.157.187 parent 80 0 no-query originserver round-robin weight=1 name=two
+
+------------------------------------------------------------
+
+systemctl restart squid
+
+------------------------------------------------------------
+
+Open Web browser form M1 using its IP.
+First 2 times browser will connect with M2.
+an 1 time it will caonnect with M3.
+

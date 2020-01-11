@@ -1,0 +1,67 @@
+iptables
+--------------------------------------------------------------------------------
+1-A. Configure a stateful packet inspection(SPI) firewall that:
+  * Allow all outboud traffic.
+  * Block all unwanted/new incoming traffic.
+
+1-B. iptables-save
+1-C. iptables-persistent
+
+For Solution Refer: statefull spi iptables 1.sh
+_________________________________________________________________
+
+
+
+
+--------------------------------------------------------------------------------
+1-A.
+--------------Details----------------
+Machine X- 192.168.116.144
+Machine Y- 192.168.116.145
+-------------------------------------
+# To check iptables are installed or not?
+which iptables
+
+# To check iptables version
+iptables -V
+
+# To check status of iptables
+iptables -L
+
+# Changing the default settings
+
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD DROP
+
+# To allow ssh connection
+iptables -A INPUT -i lo -j ACCEPT
+
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+
+iptables -A INPUT -s 192.168.116.145
+---------------------------------------------------------------------------------
+------Other Examples-----
+
+iptables -A INPUT -m iprange --src-range 192.168.100.200-192.168.100.205 -j ACCEPT
+
+iptables -A INPUT -m iprange --dst-range 192.168.100.200-192.168.100.205 -j ACCEPT
+
+iptables -A INPUT -s 192.168.100.100 -m mac --mac-source 00:50:AB:CD:06:FG -j ACCEPT
+
+iptables -A INPUT -p tcp --dport 6881 -j ACCEPT
+iptables -A INPUT -p tcp --destination-port 6881 -j ACCEPT
+
+iptables -A INPUT -p tcp --dport 6881:6990 -j ACCEPT
+iptables -A INPUT -p tcp --destination-port 6881:6990 -j ACCEPT
+
+iptables -A INPUT -p tcp --sport 6881 -j ACCEPT
+iptables -A INPUT -p tcp --source-port 6881 -j ACCEPT
+
+iptables -A INPUT -p tcp --sport 6881:6990 -j ACCEPT
+iptables -A INPUT -p tcp --source-port 6881:6990 -j ACCEPT
+--------------------------------------------------------------------------------
+
+
+1-D. SNAT & DNAT
+For Soltuion refer: SNAT.txt

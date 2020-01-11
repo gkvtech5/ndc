@@ -1,0 +1,21 @@
+NDC Lab Exam
+--------------------------------------------------------------------------------
+1. Configure a stateful packet inspection(SPI) firewall that:
+  * Allow all outboud traffic.
+  * Block all unwanted/new incoming traffic.
+
+  iptables-save
+  iptables-persistent
+
+  SNAT & DNAT
+  For Solution Refer: SNAT.txt
+
+  Block packet traffic coming from perticular GeoLocation using GeoIP Database.
+  For Solution Refer: xtables.txt
+
+2. Port Forwarding
+   For Solution Refer: port-forward.txt
+
+3.IDS -Intrusion Detection System Using Snort
+  * In Windows Machine
+  * In Debian Machine

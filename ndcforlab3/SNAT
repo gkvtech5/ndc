@@ -1,0 +1,152 @@
+
+SNAT = SOURCE NATTING
+-------------------------------------------------------------------
+Date: 04DEC2019
+Requirements:
+		3 Debain Machines with static ip :
+
+		Machine 1 package requirements: (with 1 NIC Card)
+			openssh-server sudo tree links bash-completion apache2 tcpdump
+
+		Machine 2 package requirements: (with 2 NIC Card)
+			openssh-server sudo tree links bash-completion apache2 tcpdump iptstate conntrack
+
+		Machine 3 package requirements: (with 1 NIC Card)
+			openssh-server sudo tree links bash-completion apache2 tcpdump
+
+
+		IP Configuration OverView
+	------------------------------------------------------------------------------------------------------------------
+	|			Machine 1				|			     Machine 2						|		Machine 3
+	|				NIC					|	NIC 1				-	NIC 2				|			NIC
+	-----------------------------------------------------------------------------------------------------------------
+	address    	       192.168.100.101	|	192.168.100.254			192.168.200.254		|		192.168.200.101
+	netmask      	   255.255.255.0	|	255.255.255.0			255.255.255.0		|		255.255.255.0
+	gateway      	   192.168.100.254	|							192.168.200.101		|		192.168.200.254
+	network      	   192.168.100.0	|	192.168.100.0			192.168.200.0		|		192.168.200.0
+	broadcast     	   192.168.100.255	|	192.168.100.255			192.168.200.255		|		192.168.200.255
+	--------------------------------------------------------------------------------------------------------------------
+
+
+
+-------------------------------------------------------------------
+machine 1 NIC Configuration
+------------------------------------------------------------------
+user@deb1:~$ cat /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+allow-hotplug ens33
+iface ens33 inet static
+		address         192.168.100.101
+		netmask         255.255.255.0
+		gateway         192.168.100.254
+		network         192.168.100.0
+		broadcast       192.168.100.255
+
+------------------------------------------------------------------
+
+
+
+
+machine 2 NIC Configuration
+------------------------------------------------------------------
+user@deb2:~$ cat /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+allow-hotplug ens33
+iface ens33 inet static
+		address         192.168.100.254
+		netmask         255.255.255.0
+		network         192.168.100.0
+		broadcast       192.168.100.255
+		
+allow-hotplug ens37
+iface ens37 inet static
+		address         192.168.200.254
+		netmask         255.255.255.0
+		network         192.168.200.0
+		broadcast       192.168.200.255
+		gateway         192.168.200.101
+
+
+------------------------------------------------------------------
+
+
+
+iptables script for machine 2
+-------------------------------------------------------------------
+#!/bin/bash
+LAN="ens33"
+WAN="ens37"
+
+## Enabling the IP_Forwarding
+echo 1 > /proc/sys/net/ipv4/ip_forward
+iptables -F
+
+iptables -t nat -F
+
+iptables -P INPUT ACCEPT
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD ACCEPT
+
+#>
+# forward the traffic coming from LAN to WAN
+
+iptables -A FORWARD -i $LAN -o $WAN -j ACCEPT
+#forward the traffic coming from WAN to LAN whose state is RELATED/ESTABLISHED
+
+iptables -A FORWARD -i $LAN -o $WAN -m state --state RELATED,ESTABLISHED -j ACCEPT
+# configure source NAT using MASQUERADE
+iptables -t nat -A POSTROUTING -o $WAN -j MASQUERADE
+iptables -t nat -L
+iptables -L
+
+-------------------------------------------------------------------
+
+iptstate -L
+
+iptstate
+
+
+machine 3 NIC Configuration
+-------------------------------------------------------------------
+
+user@deb3:~$ cat /etc/network/interfaces
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+# The primary network interface
+allow-hotplug ens33
+iface ens33 inet static
+				address         192.168.200.101
+				netmask         255.255.255.0
+				network         192.168.200.0
+				broadcast       192.168.200.255
+				gateway         192.168.200.254
+-------------------------------------------------------------------
+Packet Sniffing Commands:Ping from machine 1 to machine 3 and run this command on machine 3 to record data packet.
+
+	tcpdump icmp
+
+-------------------------------------------------------------------

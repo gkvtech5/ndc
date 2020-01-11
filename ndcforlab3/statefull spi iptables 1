@@ -1,0 +1,23 @@
+#!/bin/bash
+# This script is to setup stateful packet ins firewall that allow only ESTABLISHED & RELATED connection.
+iptables -F
+iptables -L
+echo "-----------Setting the Default Permission-----------"
+iptables -P INPUT DROP
+iptables -P OUTPUT ACCEPT
+iptables -P FORWARD DROP
+
+echo "-----------Listing Permissions-----------"
+
+iptables -A INPUT -i lo -j ACCEPT
+iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+iptables -A INPUT -s 192.168.116.145
+
+echo "-----------Printing the Fully Configured iptable state-----------"
+iptables -L
+
+apt-get install bash-complition iptables-save
+# To make iptable persistent ....
+apt-get install iptables-persistent
+# exporting the iptable rules
+iptables-save > /etc/iptables/rules.v4

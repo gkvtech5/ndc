@@ -1,0 +1,360 @@
+NDC Topic : nagios
+
+--------------------------------------------------------------------
+Dated: 17DEC2019
+
+====================================================================
+Nagios Setup:
+-------------------------------------------------------------------
+1. Change hostname
+2. Configure static ip
+3. Configure apt
+4. Install and Configure sudo
+5. set time zone
+6. Install pre-requiresites
+7. download and extract nagios source code
+8. Compile nagios 
+9. Create nagios user and group
+10.
+11. 
+
+-------------------------------------------------------------------
+
+
+
+sudo apt-get install apache2 apache2-utils autoconf gcc libc6 libgd-dev make php python python3 tree unzip wget
+cd /tmp/
+ls
+wget -q http://192.168.74.3/sw/security_tools/nagios/nagios-4.4.5.tar.gz
+## Downloading nagios tar file
+
+ls
+
+tar -xvf nagios-4.4.5.tar.gz
+## extracting nagios 
+
+ls
+cd nagios-4.4.5
+## Changing the working directory 
+
+ls -l
+sudo ./configure --with-httpd-conf=/etc/apache2/sites-enabled/
+
+
+sudo make all
+
+sudo make install-groups-users
+
+sudo passwd nagios
+
+sudo usermod -aG nagios www-data
+## adding nagios user to www-data group so that nagios can access webserver
+
+sudo make install
+
+sudo tree -dL 1 /usr/local/nagios/
+
+sudo make install-daemoninit
+## making application as a service or Daemon
+
+sudo tree -dL 1 /usr/local/nagios/
+sudo make install-commandmode
+sudo make install-config
+sudo ls -l /usr/local/nagios/
+sudo make install-webconf
+sudo tree /etc/apache2/sites-*
+sudo a2enmod rewrite
+sudo a2enmod cgi
+sudo htpasswd -c /usr/local/nagios/etc/htpasswd.users nagiosadmin
+sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+sudo systemctl restart apache2
+sudo systemctl start nagios
+hostname -I
+
+##Configure/Setup addons 
+sudo apt-get install automake autotools-dev bc build-essential dc gawk gettext libmcrypt-dev libnet-snmp-perl libssl-dev snmp
+cd ..
+ls -l
+wget -q http://192.168.74.3/sw/security_tools/nagios/nagios-plugins-release-2.2.1.tar.gz
+ls -l
+tar -xvf nagios-plugins-release-2.2.1.tar.gz
+ls -l
+cd nagios-plugins-release-2.2.1
+ls -l /usr/local/nagios/libexec/
+sudo ./tools/setup
+ls
+sudo ./configure
+sudo make
+sudo make install
+ls -l /usr/local/nagios/libexec/
+
+
+# open browser : 192.168.68.129/nagios
+## userid 	: nagiosadmin
+## password	:	toor
+
+
+
+## Tree View after basic nagios-setup:
+
+root@debian:~# tree -dL 2 /usr/local/nagios/
+/usr/local/nagios/
+├── bin
+├── etc
+│   └── objects
+├── libexec
+├── sbin
+├── share
+│   ├── angularjs
+│   ├── bootstrap-3.3.7
+│   ├── contexthelp
+│   ├── d3
+│   ├── docs
+│   ├── images
+│   ├── includes
+│   ├── js
+│   ├── locale
+│   ├── media
+│   ├── spin
+│   ├── ssi
+│   └── stylesheets
+└── var
+    ├── archives
+    ├── rw
+    └── spool
+
+23 directories
+
+--------------------------------------------------------------------------------------------------------------------------
+
+Dated: 18DEC2019
+
+--------------------------------------------------------------------------------------------------------------------------
+## Monitor machine other than nagios-server itself:
+
+
+## System which you want to monitor ,install "ncpa-2.1.9.exe" (Perticular on windows machine ; it will be listen on port 5693 http://localhost:5693 )
+## basically check_ncpa.py is API (Application Programming Interface) 
+## https://127.0.0.1:5693/
+
+-----------------------------------------------------------------------------------
+
+## On nagios-server :
+
+cd /usr/local/nagios/libexec/
+
+wget -q http://192.168.74.3/sw/security_tools/nagios/check_ncpa.py
+
+sudo chmod 755 check_ncpa.py
+
+sudo ./check_ncpa.py
+
+sudo ./check_ncpa.py -t P@ssword -H 192.168.68.141 -M memory/virtual 
+
+# toor is password of API , X.X.X.141- IP of Windows Machine 
+
+sudo nano /usr/local/nagios/etc/objects/commands.cfg
+	## add this lines 
+		define command {
+		
+			command_name check_ncpa
+			command_line $USER1$/check_ncpa.py -H $HOSTADDRESS$ $ARG1$
+			
+			}
+
+
+cd /usr/local/nagios/etc/
+
+cd /usr/local/nagios/etc/nagios.cfg
+
+sudo nano nagios.cfg 
+	##on line 51 uncomment it.
+	
+	cfg_dir=/usr/local/nagios/etc/servers
+	
+	##
+	
+
+
+sudo mkdir servers
+
+cd servers
+
+sudo nano machine.cfg
+
+	## Put these lines
+define host {
+               use                     windows-server
+               host_name               windows7-machine
+               alias                   Description
+               address                 192.168.68.141
+               max_check_attempts      3
+                               }
+
+define service {
+               use                     generic-service
+               host_name               windows7-machine
+               service_description NCPA Agent Versio X.X.X.X
+               check_command   check_ncpa!-t 'P@ssword' -p -P 5693 -M system/agent_version
+                                        }
+
+define service {
+               use                     generic-service
+               host_name               windows7-machine
+               service_description CPU Average
+               check_command   check_ncpa!-t 'P@ssword' -p -P 5693 -M cpu/percent -w 20 -c 40 -q 'aggregate=avg'
+                                        }
+										
+define service {
+       use                     generic-service
+       host_name               windows7-machine
+       service_description     NCPA Agent Version
+       check_command           check_ncpa!-t 'P@ssword' -p -P 5693 -M system/agent_version
+}
+
+define service {
+		use                     generic-service
+		host_name               windows7-machine
+		service_description     CPU Average
+		check_command           check_ncpa!-t 'P@ssword' -p -P 5693 -M cpu/percent -w 70 -c 80 -q 'aggregate=avg'
+}
+
+define service {
+		use                     generic-service
+		host_name               windows7-machine
+		service_description     Virtual Memory
+		check_command           check_ncpa!-t 'P@ssword' -p -P 5693 -M memory/virtual -w 70 -c 90
+}
+
+define service {
+		use                     generic-service
+		host_name               windows7-machine
+		service_description     Processes
+		check_command           check_ncpa!-t 'P@ssword' -p -P 5693 -M processes -w 50 -c 80
+}
+
+define service {
+		use                     generic-service
+		host_name               windows7-machine
+		service_description     Uptime
+		check_command           check_ncpa!-t 'P@ssword' -p -P 5693 -M 'system/uptime'
+}
+
+define service {
+		use                     generic-service
+		host_name               windows7-machine
+		service_description     C Drive Usage
+		check_command           check_ncpa!-t 'P@ssword' -p -P 5693 -M 'disk/logical/C:|/used_percent' -w 70 -c 90
+}
+
+define service {
+		use                     generic-service
+		host_name               windows7-machine
+		service_description     Network Interface
+		check_command           check_ncpa!-t 'P@ssword' -p -P 5693 -M 'interface/Local Area Connection'
+}
+
+	##
+	
+sudo /usr/local/nagios/bin/nagios -v /usr/local/nagios/etc/nagios.cfg
+
+cd /usr/local/nagios/etc/objects/
+
+sudo nano templates.cfg
+
+	## Comment on line given below	## on windows-service definition 
+		
+	 # hostgroups                      windows-servers         ; Host groups that Windows servers should be a member of
+
+
+## Open http://192.168.68.139/nagios/
+-------------------------------------------------------------------------------------------------------------------------------------
+Date : 19Dec2019
+
+-------------------------------------------------------------------------------------------------------------------------------------
+
+
+
+## Settings on Debian Remote Host Machine
+
+
+
+apt-get install wget libsqlite3-0
+
+cd /tmp/
+wget http://192.168.74.3/sw/security_tools/nagios/ncpa-2.1.9.d10.amd64.deb
+ls -l
+sudo dpkg -i ncpa-2.1.9.d10.amd64.deb
+sudo nano /usr/local/ncpa/etc/ncpa.cfg
+	# Change the default password given below
+	[api]
+	community_string = mytoken123
+	##
+	
+##Open Browser	: https://192.168.157.149:5693/
+## Enter password
+
+--------------------------------------------------------------------------------------
+
+## On nagios-server:
+
+cd /usr/local/nagios/libexec/
+
+sudo ./check_ncpa.py -t mytoken123 -H 192.168.157.149 -M memory/virtual 
+
+cd /usr/local/nagios/etc/objects
+
+nano commands.cfg
+
+## add these lines:
+	define command {
+
+                        command_name check_ncpa
+                        command_line $USER1$/check_ncpa.py -H $HOSTADDRESS$ $ARG1$
+
+                        }
+###
+
+
+cd /usr/local/nagios/etc/
+
+nano nagios.cfg
+
+## Uncomment line nu :51
+	cfg_dir=/usr/local/nagios/etc/servers
+##
+
+mkdir servers
+
+cd servers
+
+nano linux-server.cfg
+
+
+##	Entry these lines:
+
+define host {
+              use                     linux-server
+              host_name               deb10.0
+              alias                   Description
+              address                 192.168.157.149
+              max_check_attempts      3
+                              }
+
+
+define service {
+              use                     generic-service
+              host_name               deb10.0
+              service_description NCPA Agent Versio X.X.X.X
+              check_command   check_ncpa!-t 'mytoken123' -p -P 5693 -M system/agent_version
+                                      }
+
+###
+
+systemctl restart nagios.service
+
+
+## Open Web browser: http://<ip-of-nagios-server>/nagios/
+
+
+---------------------------------------------------------------------------------

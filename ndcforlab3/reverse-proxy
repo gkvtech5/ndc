@@ -1,0 +1,69 @@
+Reverse Proxy
+------------------------------------------------------------------------------------------------
+Date: 21DEC2019
+
+------------------------------------------------------------------------------------------------
+Requirements:
+			1. 2 machines
+Machine1:	nginx ,links	(IP:192.168.157.160)
+
+Machine2:	apache 				(IP:192.168.157.139)
+------------------------------------------------------------------------------------------------
+After installation nginx in Machine1:
+Open web browser: http://192.168.157.160/; nginx message will appear
+
+root@deb1:~# tree /etc/nginx/sites-*
+				/etc/nginx/sites-available
+				└── default
+				/etc/nginx/sites-enabled
+				└── default -> /etc/nginx/sites-available/default
+
+				0 directories, 2 files
+
+root@deb1:~# rm /etc/nginx/sites-enabled/*
+
+root@deb1:~# tree /etc/nginx/sites-*
+				/etc/nginx/sites-available
+				└── default
+				/etc/nginx/sites-enabled
+
+				0 directories, 1 file
+
+nano /etc/nginx/sites-available/rp.conf
+
+## Entry
+server {
+        listen 80;
+        location / { proxy_pass http://192.168.157.161; }
+        }
+}
+
+##
+
+root@deb1:~# ln -s /etc/nginx/sites-available/rp.conf /etc/nginx/sites-enabled/
+
+root@deb1:~# tree /etc/nginx/sites-*
+		/etc/nginx/sites-available
+		├── default
+		└── rp.conf
+		/etc/nginx/sites-enabled
+		└── rp.conf -> /etc/nginx/sites-available/rp.conf
+
+0 directories, 3 files
+
+
+
+
+
+
+root@deb1:~# tail -f /var/log/nginx/access.log
+
+root@deb2:~# tail -f /var/log/apache2/access.log
+
+
+
+------------------------------------------------------------------------------------------------
+
+
+
+------------------------------------------------------------------------------------------------

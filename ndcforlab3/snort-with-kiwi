@@ -1,0 +1,22 @@
+snort with kiwi-log-server
+
+
+Debian
+-------------------------
+
+How to generate snort-log to kiwi
+
+nano /etc/rsyslog.conf
+
+*.* @ 192.168.116.149
+#X.X.X.149 - IP of Kiwi server
+
+
+nano /etc/snort/snort.conf
+##on Step 6  ##
+output alert_syslog:host=192.168.116.149:514,LOG_AUTH LOG_ALERT
+-------------------------
+
+
+Windows
+-------------------------

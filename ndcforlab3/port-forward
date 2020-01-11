@@ -1,0 +1,9 @@
+## Port Forwarding
+
+sudo apt-get install apache2
+
+iptables -t nat -A PREROUTING -p tcp --dport 1234 -j REDIRECT --to-port 80
+
+
+## Open Browser not using links ; from base machine use mozila .
+localhost-ip:1234
